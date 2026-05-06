@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "Key": {
+      "title": "Key",
+      "description": "Validation keys for users to access the predictor",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "durationHours": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "isActive": { "type": "boolean" },
+        "deviceId": { "type": "string", "description": "ID of the device currently using this key (Legacy)" },
+        "maxDevices": { "type": "number", "description": "Maximum number of devices allowed for this key" },
+        "usedDevices": { "type": "array", "items": { "type": "string" }, "description": "List of device IDs using this key" }
+      },
+      "required": ["key", "durationHours", "createdAt", "expiresAt", "isActive", "maxDevices"]
+    },
+    "Device": {
+      "title": "Device",
+      "description": "Information about a device that has connected",
+      "type": "object",
+      "properties": {
+        "deviceId": { "type": "string" },
+        "isBlocked": { "type": "boolean" },
+        "lastSeenAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["deviceId", "isBlocked"]
+    },
+    "AdminSettings": {
+      "title": "Admin Settings",
+      "description": "Global controls for games and notices",
+      "type": "object",
+      "properties": {
+        "wingo30sEnabled": { "type": "boolean" },
+        "wingo1mEnabled": { "type": "boolean" },
+        "globalNotice": { "type": "string" },
+        "totalWins": { "type": "number" },
+        "totalLosses": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["wingo30sEnabled", "wingo1mEnabled", "globalNotice", "totalWins", "totalLosses"]
+    }
+  },
+  "firestore": {
+    "/config/settings": {
+      "schema": "AdminSettings",
+      "description": "Global application configuration"
+    },
+    "/keys/{keyId}": {
+      "schema": "Key",
+      "description": "Temporary access keys for the application"
+    },
+    "/devices/{deviceId}": {
+      "schema": "Device",
+      "description": "Unique device tracking for security and management"
+    }
+  }
+}

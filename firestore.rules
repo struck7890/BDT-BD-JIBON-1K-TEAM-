@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { 
+      return isSignedIn() && 
+             request.auth.token.email.lower() == 'struckjibon@gmail.com';
+    }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+
+    // keys collection
+    match /keys/{keyId} {
+      function isValidKey(data) {
+        return data.key is string && data.key.size() <= 32 &&
+               data.durationHours is number && 
+               data.createdAt is timestamp &&
+               data.expiresAt is timestamp &&
+               data.isActive is bool &&
+               data.maxDevices is number;
+      }
+
+      // Users can get a key to check validity
+      allow get: if true; 
+      
+      // Users can update usedDevices if they have the key and it's not full
+      // Actually, we'll allow update if the incoming data is valid and it's a specific field change
+      allow update: if isValidKey(request.resource.data) && (
+        isAdmin() || 
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedDevices']))
+      );
+
+      // Admin can manage everything else
+      allow list, create: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // devices collection
+    match /devices/{deviceId} {
+      function isValidDevice(data) {
+        return data.deviceId is string && data.deviceId.size() <= 64 &&
+               data.isBlocked is bool &&
+               data.lastSeenAt is timestamp;
+      }
+
+      // Users can get/update their own device record
+      // We check that the document ID matches a reasonable client-provided ID (not auth uid since they are anonymous mostly)
+      allow get: if true;
+      allow create, update: if isValidId(deviceId) && isValidDevice(request.resource.data);
+      
+      // Admin can list and manage all
+      allow list: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /config/{configId} {
+      allow read: if true;
+      allow update: if configId == 'settings' && 
+                      (isAdmin() || 
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalWins', 'totalLosses', 'updatedAt']));
+      allow write: if isAdmin();
+    }
+  }
+}
