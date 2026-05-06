@@ -5,6 +5,8 @@ import { getDeviceId, cn } from '../lib/utils';
 import { Key as KeyIcon, Smartphone, ShieldCheck, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 
+import { Link } from 'react-router-dom';
+
 export default function LoginView({ onLogin }: { onLogin: () => void }) {
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
@@ -147,8 +149,14 @@ export default function LoginView({ onLogin }: { onLogin: () => void }) {
         </form>
 
         <div className="pt-8 text-center space-y-4">
+           <Link 
+             to="/admin-access-control"
+             className="text-[10px] text-cyan-500/60 hover:text-cyan-400 uppercase font-bold tracking-widest transition-all block mb-2 underline decoration-cyan-500/20 underline-offset-4"
+           >
+             Terminal Access
+           </Link>
            <p className="text-[8px] text-gray-800 uppercase tracking-widest">
-             © 2026 BDT PRO SYSTEMS • V2.3.0_OMEGA
+             © 2026 BDT PRO SYSTEMS • V2.5.0_OMEGA
            </p>
         </div>
       </motion.div>

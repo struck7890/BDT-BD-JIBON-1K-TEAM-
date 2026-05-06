@@ -3,7 +3,7 @@ import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, increment, Timestamp } from 'firebase/firestore';
 import { HistoryItem, PredictionResult, AdminSettings } from '../types';
 import { cn, getDeviceId } from '../lib/utils';
-import { Shield, TrendingUp, History, Clock, Target, Ghost, Zap, Activity, Bell, AlertTriangle } from 'lucide-react';
+import { Shield, TrendingUp, History, Clock, Target, Ghost, Zap, Activity, Bell, AlertTriangle, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const HISTORY_API_30S = '/api/history/30s';
@@ -98,7 +98,7 @@ export default function PredictorView({ onLogout }: { onLogout: () => void }) {
   const getBigSmall = (n: number): 'Big' | 'Small' => (n >= 5 ? 'Big' : 'Small');
 
   const getDecision = (hist: HistoryItem[], consecutiveLosses: number, gameMode: GameMode) => {
-    if (hist.length < 10) return { p: 'Big' as 'Big' | 'Small', reason: "HIDAN_V5_STABLE_LINK...", nums: [5, 9] };
+    if (hist.length < 10) return { p: 'Big' as 'Big' | 'Small', reason: "HIDAN_V6_STABLE_LOAD...", nums: [5, 9] };
     
     const nums = hist.map(h => h.number);
     const sizes = hist.map(h => h.size);
@@ -126,64 +126,59 @@ export default function PredictorView({ onLogout }: { onLogout: () => void }) {
     const isMirror = nums[0] === (9 - nums[1]);
 
     let p: 'Big' | 'Small' = 'Big';
-    let reason = "HIDAN_ULTRA_V5";
+    let reason = "HIDAN_V6_OMEGA";
 
-    // --- STRATEGY ENGINE V5 (RECOVERY & STABILITY) ---
+    // --- STRATEGY ENGINE V6 (ULTRA STABILITY) ---
     
-    if (consecutiveLosses >= 4) {
-        // ULTRA RECOVERY: Strict Dragon Rider (Stop fighting the trend)
+    if (consecutiveLosses >= 5) {
+        // LEVEL 5+ EMERGENCY: Mirror the trend exactly
         p = sizes[0];
-        reason = `TITAN_SYNC_L${consecutiveLosses}`;
-    } else if (consecutiveLosses >= 2) {
-        // MID RECOVERY: Pattern Reversal check
-        if (flux >= 4) {
-            p = sizes[0]; // Choppy market, stick to last
-            reason = "CHOP_STABILITY";
-        } else {
-            p = sizes[0] === 'Big' ? 'Small' : 'Big';
-            reason = `DELTA_RECOVERY_L${consecutiveLosses}`;
-        }
-    } else if (streakCount >= 3) {
-        // Dragon Handling (Started earlier at 3)
-        if (streakCount >= 4) {
-            p = currentStreakSize; // Follow the dragon
-            reason = "DRAGON_VELOCITY";
+        reason = `OMEGA_SYNC_L${consecutiveLosses}`;
+    } else if (consecutiveLosses >= 3) {
+        // MID-LEVEL RECOVERY: Reversal strategy for choppy trends
+        p = sizes[0] === 'Big' ? 'Small' : 'Big';
+        reason = `STRIKE_BACK_L${consecutiveLosses}`;
+    } else if (streakCount >= 4) {
+        // Advanced Dragon Handling
+        if (streakCount >= 6) {
+            p = currentStreakSize; // Deep Dragon, follow it
+            reason = "DRAGON_FORCE_V6";
         } else {
             p = currentStreakSize === 'Big' ? 'Small' : 'Big';
-            reason = "STREAK_SHIELD_V5";
+            reason = "SHIELD_BREAK_V6";
         }
     } else if (isSandwich) {
         p = sizes[1]; 
-        reason = "SANDWICH_PRO_V5";
-    } else if (flux >= 7) {
-        // Extreme Volatility - Follow the Jump
+        reason = "SANDWICH_CORE_V6";
+    } else if (flux >= 8) {
+        // High Turbulence - Reversal
         p = sizes[0] === 'Big' ? 'Small' : 'Big';
-        reason = "VORTEX_HARMONIC";
-    } else if (avgWeight > 5.8) {
+        reason = "TURBULENCE_OMEGA";
+    } else if (avgWeight >= 6.0) {
         p = 'Small';
-        reason = "GRAVITY_MAX";
-    } else if (avgWeight < 3.2) {
+        reason = "HARMONIC_GRAVITY";
+    } else if (avgWeight <= 3.0) {
         p = 'Big';
-        reason = "ASCENSION_V5";
+        reason = "HARMONIC_LIFT";
     } else if (isMirror) {
         p = nums[0] >= 5 ? 'Small' : 'Big';
-        reason = "MIRROR_QUANTUM";
+        reason = "QUANTUM_REFLEX";
     } else {
-        // Neural Weighted Selection
+        // Complex Neural Seed
         const timeSeed = new Date().getMilliseconds();
-        p = (timeSeed + nums[0] + flux) % 2 === 0 ? 'Big' : 'Small';
-        reason = "NEURAL_CORE_V5";
+        p = (timeSeed + nums[0] + flux + streakCount) % 2 === 0 ? 'Big' : 'Small';
+        reason = "NEURAL_SYNAPSE_V6";
     }
 
-    // --- PRECISION NUMBER ENGINE V5 ---
+    // --- PRECISION NUMBER ENGINE V6 ---
     const seed = new Date().getMilliseconds();
-    const bigSet = [5, 6, 8, 9];
-    const smallSet = [0, 2, 3, 4];
+    const bigSet = [5, 6, 7, 8, 9];
+    const smallSet = [0, 1, 2, 3, 4];
     const targetSet = p === 'Big' ? bigSet : smallSet;
     
-    const n1 = targetSet[seed % 4];
-    let n2 = targetSet[(seed + 7) % 4];
-    if (n1 === n2) n2 = targetSet[(seed + 3) % 4];
+    const n1 = targetSet[seed % 5];
+    let n2 = targetSet[(seed + 7) % 5];
+    if (n1 === n2) n2 = targetSet[(seed + 3) % 5];
 
     return { p, reason, nums: [n1, n2] };
   };
@@ -307,6 +302,17 @@ export default function PredictorView({ onLogout }: { onLogout: () => void }) {
     <div className="min-h-screen bg-[#050c26] text-gray-200 p-4 font-sans select-none pb-20">
       <div className="max-w-md mx-auto space-y-4">
         
+        {/* Top Header Actions */}
+        <div className="flex justify-end items-center px-1">
+           <button 
+             onClick={onLogout}
+             className="group flex items-center gap-1.5 px-3 py-1.5 bg-red-500/5 hover:bg-red-500/10 text-red-500/70 hover:text-red-500 rounded-lg border border-red-500/10 hover:border-red-500/30 transition-all text-[9px] font-black tracking-[0.2em] uppercase"
+           >
+             <LogOut className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" /> 
+             Account Exit
+           </button>
+        </div>
+
         {/* Ad-Notice Header */}
         <AnimatePresence>
           {settings?.globalNotice && (
@@ -446,7 +452,7 @@ export default function PredictorView({ onLogout }: { onLogout: () => void }) {
                   </span>
                   <div className="flex items-center gap-2">
                      <span className="text-[10px] font-black text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">{activeTimeLeft}s</span>
-                     <span className="text-[8px] font-mono text-cyan-500/40 font-black">v27_OMEGA_RECOVERY</span>
+                     <span className="text-[8px] font-mono text-cyan-500/40 font-black">v28_ULTRA_OMEGA</span>
                   </div>
                 </div>
               </div>
